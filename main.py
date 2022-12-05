@@ -170,7 +170,7 @@ class Ui(QtWidgets.QMainWindow):
             image = cv2.addWeighted(self.preview, 0.5, self.preview_mask, self.opacity, 0.0)
 
 
-        image = cv2.resize(image, (400, 400))
+        image = cv2.resize(image, (500, 500))
         q_img = self.array_to_QPixmap(image)
         pixmap_image = QPixmap.fromImage(q_img)
         self.pixmap.setPixmap(pixmap_image)
@@ -207,6 +207,11 @@ class Ui(QtWidgets.QMainWindow):
 
         if direction== 1:
             self.image_position = self.image_position+1
+
+        if self.image_position < 0:
+            self.image_position = 0
+        if self.image_position > np.size(self.image_list) - 1:
+            self.image_position = np.size(self.image_list) - 1
 
 
         self.preview = cv2.imread(self.image_list[self.image_position])

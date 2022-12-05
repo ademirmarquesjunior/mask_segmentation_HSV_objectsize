@@ -6,358 +6,376 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>664</width>
-    <height>644</height>
+    <width>924</width>
+    <height>641</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Vizlab Mask/object segmentation</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>vizlab.ico</normaloff>vizlab.ico</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="openInputFolder">
-    <property name="geometry">
-     <rect>
-      <x>520</x>
-      <y>20</y>
-      <width>121</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Input folder</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="selectOutputFolder">
-    <property name="geometry">
-     <rect>
-      <x>520</x>
-      <y>60</y>
-      <width>121</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Output folder</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="processButton">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>480</y>
-      <width>141</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Process masks</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="labelInputFolder">
+   <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
-      <width>321</width>
-      <height>16</height>
+      <y>0</y>
+      <width>901</width>
+      <height>598</height>
      </rect>
     </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QLabel" name="labelOutputFolder">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>60</y>
-      <width>321</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QProgressBar" name="progressBar">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>570</y>
-      <width>621</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="value">
-     <number>15</number>
-    </property>
-    <property name="textVisible">
-     <bool>false</bool>
-    </property>
-   </widget>
-   <widget class="QGraphicsView" name="graphicsView">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>110</y>
-      <width>461</width>
-      <height>411</height>
-     </rect>
-    </property>
-    <property name="cursor" stdset="0">
-     <cursorShape>CrossCursor</cursorShape>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>230</y>
-      <width>101</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Min size of object</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinObjectSize">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>260</y>
-      <width>141</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>3000000</number>
-    </property>
-    <property name="value">
-     <number>700000</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>110</y>
-      <width>91</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Lower HSV limit</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_3">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>160</y>
-      <width>91</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Higher HSV limit</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinHL">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>130</y>
-      <width>42</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>255</number>
-    </property>
-    <property name="value">
-     <number>35</number>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinSL">
-    <property name="geometry">
-     <rect>
-      <x>550</x>
-      <y>130</y>
-      <width>42</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>255</number>
-    </property>
-    <property name="value">
-     <number>50</number>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinVL">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>130</y>
-      <width>42</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>255</number>
-    </property>
-    <property name="value">
-     <number>20</number>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinSH">
-    <property name="geometry">
-     <rect>
-      <x>550</x>
-      <y>190</y>
-      <width>42</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>255</number>
-    </property>
-    <property name="value">
-     <number>255</number>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinVH">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>190</y>
-      <width>42</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>255</number>
-    </property>
-    <property name="value">
-     <number>255</number>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinHH">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>190</y>
-      <width>42</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>255</number>
-    </property>
-    <property name="value">
-     <number>190</number>
-    </property>
-   </widget>
-   <widget class="Line" name="line">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>90</y>
-      <width>641</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="previewButton">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>300</y>
-      <width>141</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Preview</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="scrollLeftButton">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>520</y>
-      <width>251</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>&lt;</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="scrollRightButton">
-    <property name="geometry">
-     <rect>
-      <x>270</x>
-      <y>520</y>
-      <width>211</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>&gt;</string>
-    </property>
-   </widget>
-   <widget class="QSlider" name="sliderOpacity">
-    <property name="geometry">
-     <rect>
-      <x>490</x>
-      <y>430</y>
-      <width>160</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="value">
-     <number>50</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_4">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>400</y>
-      <width>49</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Opacity</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="opacityValueText">
-    <property name="geometry">
-     <rect>
-      <x>590</x>
-      <y>400</y>
-      <width>49</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>50</string>
-    </property>
+    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1,0">
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QLineEdit" name="labelInputFolder"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="openInputFolder">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Input folder</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QLineEdit" name="labelOutputFolder"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="selectOutputFolder">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Output folder</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0,0">
+       <property name="spacing">
+        <number>6</number>
+       </property>
+       <property name="sizeConstraint">
+        <enum>QLayout::SetNoConstraint</enum>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="scrollLeftButton">
+         <property name="text">
+          <string>&lt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGraphicsView" name="graphicsView">
+         <property name="minimumSize">
+          <size>
+           <width>400</width>
+           <height>400</height>
+          </size>
+         </property>
+         <property name="cursor" stdset="0">
+          <cursorShape>CrossCursor</cursorShape>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="scrollRightButton">
+         <property name="text">
+          <string>&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame">
+         <property name="minimumSize">
+          <size>
+           <width>180</width>
+           <height>500</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>180</width>
+           <height>500</height>
+          </size>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <widget class="QSpinBox" name="spinSL">
+          <property name="geometry">
+           <rect>
+            <x>60</x>
+            <y>30</y>
+            <width>42</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>50</number>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="processButton">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>380</y>
+            <width>141</width>
+            <height>71</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Process masks</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="spinObjectSize">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>160</y>
+            <width>141</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>3000000</number>
+          </property>
+          <property name="value">
+           <number>700000</number>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="spinVL">
+          <property name="geometry">
+           <rect>
+            <x>110</x>
+            <y>30</y>
+            <width>42</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>20</number>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="previewButton">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>200</y>
+            <width>141</width>
+            <height>71</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Preview</string>
+          </property>
+         </widget>
+         <widget class="QSlider" name="sliderOpacity">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>330</y>
+            <width>160</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>50</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+         <widget class="QLabel" name="opacityValueText">
+          <property name="geometry">
+           <rect>
+            <x>100</x>
+            <y>300</y>
+            <width>49</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>50</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="label">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>130</y>
+            <width>101</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Min size of object</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="label_2">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>10</y>
+            <width>91</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Lower HSV limit</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="spinSH">
+          <property name="geometry">
+           <rect>
+            <x>60</x>
+            <y>90</y>
+            <width>42</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>255</number>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="spinVH">
+          <property name="geometry">
+           <rect>
+            <x>110</x>
+            <y>90</y>
+            <width>42</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>255</number>
+          </property>
+         </widget>
+         <widget class="QLabel" name="label_4">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>300</y>
+            <width>49</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Opacity</string>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="spinHL">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>30</y>
+            <width>42</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>35</number>
+          </property>
+         </widget>
+         <widget class="QSpinBox" name="spinHH">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>90</y>
+            <width>42</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>190</number>
+          </property>
+         </widget>
+         <widget class="QLabel" name="label_3">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>60</y>
+            <width>91</width>
+            <height>16</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Higher HSV limit</string>
+          </property>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QProgressBar" name="progressBar">
+       <property name="value">
+        <number>15</number>
+       </property>
+       <property name="textVisible">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -365,7 +383,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>664</width>
+     <width>924</width>
      <height>22</height>
     </rect>
    </property>
