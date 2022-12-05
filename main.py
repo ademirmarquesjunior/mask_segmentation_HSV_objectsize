@@ -82,6 +82,10 @@ class Ui(QtWidgets.QMainWindow):
         self.high_hsv = [190,255,255]
         self.image_list = None
         self.image_position = 0
+        self.opacity = 0.5
+
+        self.preview = None
+        self.preview_mask = None
 
         self.init_Ui()
         self.show()
@@ -99,9 +103,11 @@ class Ui(QtWidgets.QMainWindow):
         self.spinObjectSize.valueChanged.connect(self.preview_segmentation)
 
         self.previewButton.clicked.connect(self.preview_segmentation)
-        self.originalButton.clicked.connect(self.preview_original)
+        # self.originalButton.clicked.connect(self.preview_original)
         self.scrollLeftButton.clicked.connect(lambda: self.preview_original(-1))
         self.scrollRightButton.clicked.connect(lambda: self.preview_original(1))
+
+        self.sliderOpacity.valueChanged.connect(self.set_opacity)
 
         self.processButton.clicked.connect(self.process_images)
         self.progressBar.setValue(0)
@@ -129,7 +135,7 @@ class Ui(QtWidgets.QMainWindow):
 
                     # self.preview = cv2.resize(self.preview, (500, 500))
 
-                    self.update_canvas(self.preview)
+                    self.update_canvas()
 
 
                 if mode == 1:
@@ -155,11 +161,25 @@ class Ui(QtWidgets.QMainWindow):
         return qImg
 
 
-    def update_canvas(self, image):
+    def update_canvas(self):
+        if type(self.preview) != type(None) and type(self.preview_mask) == type(None):
+            image = self.preview
+        if type(self.preview_mask) != type(None) and type(self.preview_mask) != type(None):
+            # print(np.shape(self.preview))
+            # print(np.shape(self.preview_mask))
+            image = cv2.addWeighted(self.preview, 0.5, self.preview_mask, self.opacity, 0.0)
+
+
         image = cv2.resize(image, (400, 400))
         q_img = self.array_to_QPixmap(image)
         pixmap_image = QPixmap.fromImage(q_img)
         self.pixmap.setPixmap(pixmap_image)
+
+
+    def set_opacity(self):
+        self.opacity = self.sliderOpacity.value()/100
+        self.opacityValueText.setText(str(self.sliderOpacity.value()))
+        self.update_canvas()
 
 
     def preview_segmentation(self):
@@ -169,12 +189,14 @@ class Ui(QtWidgets.QMainWindow):
 
         self.object_size = self.spinObjectSize.value()
 
-        image = cv2.resize(self.preview, (int(self.preview.shape[1]/2), int(self.preview.shape[0]/2)))
+        # image = cv2.resize(self.preview, (int(self.preview.shape[1]/2), int(self.preview.shape[0]/2)))
 
-        mask = segment_mask(image, self.object_size/2, self.low_hsv, self.high_hsv)
+        self.preview_mask = segment_mask(self.preview, self.object_size, self.low_hsv, self.high_hsv)
+
+        self.preview_mask = cv2.cvtColor(self.preview_mask, cv2.COLOR_GRAY2BGR)
 
         # self.update_canvas(cv2.cvtColor(np.uint8(mask), cv2.COLOR_GRAY2BGR))
-        self.update_canvas(mask)
+        self.update_canvas()
 
         return
 
@@ -189,7 +211,7 @@ class Ui(QtWidgets.QMainWindow):
 
         self.preview = cv2.imread(self.image_list[self.image_position])
 
-        self.update_canvas(self.preview)
+        self.update_canvas()
 
         return
 
