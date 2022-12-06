@@ -1,0 +1,7 @@
+multiprocessing
+numpy
+os
+sys
+glob
+cv2
+PyQt5
