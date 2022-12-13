@@ -15,7 +15,7 @@ from PyQt5.QtCore import * #(QRect, QSize, QCoreApplication, QMetaObject, Qt)
 from PyQt5.QtWidgets import (QWidget, QPushButton, QFrame, QSlider,
                              QHBoxLayout, QVBoxLayout, QLineEdit, QGraphicsView,
                              QLayout, QSpinBox, QLabel, QProgressBar, QMenuBar,
-                             QMenu, QStatusBar, QAction)
+                             QMenu, QStatusBar, QAction, QSizePolicy)
 
 
 import sys
@@ -23,6 +23,10 @@ import numpy as np
 # from PIL import Image
 import glob
 import os
+
+from time import sleep
+
+from skimage import morphology
 
 # from threading import Thread
 from multiprocessing import Process, Array
@@ -58,9 +62,9 @@ def bwareaopen(img, min_size=7000000, connectivity=8):
 
     return img
 
-def segment_mask(image, object_size, low_hsv, high_hsv):
+def segment_mask(hsv, object_size, low_hsv, high_hsv, mode='scikit'):
 
-    hsv =  cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    # hsv =  cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     lower_green = np.array(low_hsv) # [35,50,20]
     upper_green = np.array(high_hsv) # [190,255,255]
 
@@ -70,21 +74,87 @@ def segment_mask(image, object_size, low_hsv, high_hsv):
     kernel = np.ones((30,30),np.uint8)
     closing = cv2.morphologyEx(inverted, cv2.MORPH_CLOSE, kernel)
 
-    mask = bwareaopen(img=closing, min_size=object_size, connectivity=8)
+    if mode == 'scikit':
+        mask = morphology.remove_small_objects(closing>0, object_size, connectivity=1)
+        #mask = morphology.remove_small_holes(mask, 10)
+        mask = np.uint8(mask*255)
+    else:
+        mask = bwareaopen(img=closing, min_size=object_size, connectivity=8)
 
     return mask
 
 
-def parallel_function(image_address, input_path, output_path, object_size, low_hsv, high_hsv):
+def parallel_core_function(image_address, input_path, output_path, object_size, low_hsv, high_hsv):
 
     image = cv2.imread(input_path+image_address)
+    hsv =  cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    mask = segment_mask(image, object_size, low_hsv, high_hsv)
+    mask = segment_mask(hsv, object_size, low_hsv, high_hsv)
 
 
     cv2.imwrite(output_path+image_address[:-4]+"_mask.png", mask)
 
     return
+
+class Process_mask(QThread):
+    finished = pyqtSignal()
+
+    def __init__(self, hsv, object_size, low_hsv, high_hsv, parent=None):
+        QtCore.QThread.__init__(self, parent)
+        self.hsv = hsv
+        self.object_size = object_size
+        self.low_hsv = low_hsv
+        self.high_hsv = high_hsv
+        self.outer = parent
+
+
+    def run(self):
+        """Long-running task."""
+        mask = segment_mask(self.hsv, self.object_size, self.low_hsv, self.high_hsv)
+        mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+
+        self.finished.emit()
+        return mask
+
+class Process_image_batch(QThread):
+    finished = pyqtSignal()
+    progress = pyqtSignal(int)
+
+    def __init__(self, image_list, object_size, low_hsv, high_hsv, input_path, output_path, parent=None):
+        QtCore.QThread.__init__(self, parent)
+        self.image_list = image_list
+        self.object_size = object_size
+        self.low_hsv = low_hsv
+        self.high_hsv = high_hsv
+        self.input_path = input_path
+        self.output_path = output_path
+        self.outer = parent
+
+
+    def run(self):
+
+        progress_bar_max = np.size(self.image_list)
+        progress_bar_count = 0
+        
+
+        int((progress_bar_count/progress_bar_max)*100)
+
+        """Long-running task."""
+        processes = list()
+        for index in range(np.size(self.image_list)):
+            p = Process(target=parallel_core_function, args=(str(self.image_list[index]), str(self.input_path), 
+            str(self.output_path), int(self.object_size), Array('i', self.low_hsv), Array('i', self.high_hsv)))
+            processes.append(p)
+            p.start()
+
+        for p in processes:
+            p.join()
+            progress_bar_count +=1
+            self.progress.emit(int((progress_bar_count/progress_bar_max)*100))
+
+        self.finished.emit()
+        return
+
 
 
 # class Ui(QtWidgets.QMainWindow):
@@ -112,21 +182,24 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(924, 641)
+        MainWindow.resize(1158, 706)
         icon = QIcon()
-        icon.addFile(u"vizlab.ico", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"C:/Users/adeju/.designer/backup/vizlab.ico", QSize(), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
         self.actionAbout = QAction(MainWindow)
         self.actionAbout.setObjectName(u"actionAbout")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.verticalLayoutWidget =  QWidget(self.centralwidget)
+        self.verticalLayoutWidget = QWidget(self.centralwidget)
         self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 0, 901, 598))
+        self.verticalLayoutWidget.setGeometry(QRect(10, 0, 1061, 641))
         self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
-        self.centralwidget.setLayout(self.verticalLayout)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(5, 5, 5, 5)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+
+        self.centralwidget.setLayout(self.verticalLayout)
+
+
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.labelInputFolder = QLineEdit(self.verticalLayoutWidget)
@@ -169,13 +242,17 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.scrollLeftButton)
 
-        self.graphicsView = QGraphicsView(self.verticalLayoutWidget)
-        self.graphicsView.setObjectName(u"graphicsView")
-        self.graphicsView.setMinimumSize(QSize(400, 400))
-        self.graphicsView.viewport().setProperty("cursor", QCursor(Qt.CrossCursor))
-        self.graphicsView.setAlignment(Qt.AlignCenter)
+        self.labelImage = QLabel(self.verticalLayoutWidget)
+        self.labelImage.setObjectName(u"labelImage")
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.labelImage.sizePolicy().hasHeightForWidth())
+        self.labelImage.setSizePolicy(sizePolicy)
+        self.labelImage.setMinimumSize(QSize(400, 400))
+        self.labelImage.setScaledContents(True)
 
-        self.horizontalLayout.addWidget(self.graphicsView)
+        self.horizontalLayout.addWidget(self.labelImage)
 
         self.scrollRightButton = QPushButton(self.verticalLayoutWidget)
         self.scrollRightButton.setObjectName(u"scrollRightButton")
@@ -189,78 +266,144 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.line)
 
-        self.frame = QFrame(self.verticalLayoutWidget)
-        self.frame.setObjectName(u"frame")
-        self.frame.setMinimumSize(QSize(180, 500))
-        self.frame.setMaximumSize(QSize(180, 500))
-        self.frame.setFrameShape(QFrame.StyledPanel)
-        self.frame.setFrameShadow(QFrame.Raised)
-        self.spinSL = QSpinBox(self.frame)
+        self.verticalLayout_2 = QVBoxLayout()
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.verticalLayout_2.setSizeConstraint(QLayout.SetFixedSize)
+        self.label_2 = QLabel(self.verticalLayoutWidget)
+        self.label_2.setObjectName(u"label_2")
+        self.label_2.setMinimumSize(QSize(0, 50))
+        self.label_2.setMaximumSize(QSize(300, 20))
+
+        self.verticalLayout_2.addWidget(self.label_2)
+
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.spinHL = QSpinBox(self.verticalLayoutWidget)
+        self.spinHL.setObjectName(u"spinHL")
+        self.spinHL.setMaximumSize(QSize(100, 16777215))
+        self.spinHL.setMaximum(255)
+        self.spinHL.setValue(35)
+
+        self.horizontalLayout_5.addWidget(self.spinHL)
+
+        self.spinSL = QSpinBox(self.verticalLayoutWidget)
         self.spinSL.setObjectName(u"spinSL")
-        self.spinSL.setGeometry(QRect(60, 30, 42, 22))
+        self.spinSL.setMaximumSize(QSize(100, 16777215))
         self.spinSL.setMaximum(255)
         self.spinSL.setValue(50)
-        self.processButton = QPushButton(self.frame)
-        self.processButton.setObjectName(u"processButton")
-        self.processButton.setGeometry(QRect(10, 380, 141, 71))
-        self.spinObjectSize = QSpinBox(self.frame)
-        self.spinObjectSize.setObjectName(u"spinObjectSize")
-        self.spinObjectSize.setGeometry(QRect(10, 160, 141, 22))
-        self.spinObjectSize.setMaximum(3000000)
-        self.spinObjectSize.setValue(700000)
-        self.spinVL = QSpinBox(self.frame)
+
+        self.horizontalLayout_5.addWidget(self.spinSL)
+
+        self.spinVL = QSpinBox(self.verticalLayoutWidget)
         self.spinVL.setObjectName(u"spinVL")
-        self.spinVL.setGeometry(QRect(110, 30, 42, 22))
+        self.spinVL.setMaximumSize(QSize(100, 16777215))
         self.spinVL.setMaximum(255)
         self.spinVL.setValue(20)
-        self.previewButton = QPushButton(self.frame)
+
+        self.horizontalLayout_5.addWidget(self.spinVL)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_5)
+
+        self.label_3 = QLabel(self.verticalLayoutWidget)
+        self.label_3.setObjectName(u"label_3")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
+        self.label_3.setSizePolicy(sizePolicy1)
+        self.label_3.setMinimumSize(QSize(0, 50))
+        self.label_3.setMaximumSize(QSize(300, 20))
+
+        self.verticalLayout_2.addWidget(self.label_3)
+
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.spinHH = QSpinBox(self.verticalLayoutWidget)
+        self.spinHH.setObjectName(u"spinHH")
+        self.spinHH.setMaximumSize(QSize(100, 16777215))
+        self.spinHH.setMaximum(255)
+        self.spinHH.setValue(190)
+
+        self.horizontalLayout_4.addWidget(self.spinHH)
+
+        self.spinSH = QSpinBox(self.verticalLayoutWidget)
+        self.spinSH.setObjectName(u"spinSH")
+        self.spinSH.setMaximumSize(QSize(100, 16777215))
+        self.spinSH.setMaximum(255)
+        self.spinSH.setValue(255)
+
+        self.horizontalLayout_4.addWidget(self.spinSH)
+
+        self.spinVH = QSpinBox(self.verticalLayoutWidget)
+        self.spinVH.setObjectName(u"spinVH")
+        self.spinVH.setMaximumSize(QSize(100, 16777215))
+        self.spinVH.setMaximum(255)
+        self.spinVH.setValue(255)
+
+        self.horizontalLayout_4.addWidget(self.spinVH)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_4)
+
+        self.label = QLabel(self.verticalLayoutWidget)
+        self.label.setObjectName(u"label")
+        self.label.setMaximumSize(QSize(400, 16777215))
+
+        self.verticalLayout_2.addWidget(self.label)
+
+        self.spinObjectSize = QSpinBox(self.verticalLayoutWidget)
+        self.spinObjectSize.setObjectName(u"spinObjectSize")
+        self.spinObjectSize.setMaximumSize(QSize(300, 100))
+        self.spinObjectSize.setMaximum(3000000)
+        self.spinObjectSize.setValue(700000)
+
+        self.verticalLayout_2.addWidget(self.spinObjectSize)
+
+        self.previewButton = QPushButton(self.verticalLayoutWidget)
         self.previewButton.setObjectName(u"previewButton")
-        self.previewButton.setGeometry(QRect(10, 200, 141, 71))
-        self.sliderOpacity = QSlider(self.frame)
+        self.previewButton.setMinimumSize(QSize(0, 100))
+        self.previewButton.setMaximumSize(QSize(400, 16777215))
+
+        self.verticalLayout_2.addWidget(self.previewButton)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.label_4 = QLabel(self.verticalLayoutWidget)
+        self.label_4.setObjectName(u"label_4")
+        self.label_4.setMaximumSize(QSize(200, 16777215))
+
+        self.horizontalLayout_6.addWidget(self.label_4)
+
+        self.opacityValueText = QLabel(self.verticalLayoutWidget)
+        self.opacityValueText.setObjectName(u"opacityValueText")
+        self.opacityValueText.setMaximumSize(QSize(50, 16777215))
+
+        self.horizontalLayout_6.addWidget(self.opacityValueText)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_6)
+
+        self.sliderOpacity = QSlider(self.verticalLayoutWidget)
         self.sliderOpacity.setObjectName(u"sliderOpacity")
-        self.sliderOpacity.setGeometry(QRect(0, 330, 160, 22))
+        self.sliderOpacity.setMaximumSize(QSize(400, 16777215))
         self.sliderOpacity.setMaximum(100)
         self.sliderOpacity.setValue(50)
         self.sliderOpacity.setOrientation(Qt.Horizontal)
-        self.opacityValueText = QLabel(self.frame)
-        self.opacityValueText.setObjectName(u"opacityValueText")
-        self.opacityValueText.setGeometry(QRect(100, 300, 49, 16))
-        self.label = QLabel(self.frame)
-        self.label.setObjectName(u"label")
-        self.label.setGeometry(QRect(10, 130, 101, 21))
-        self.label_2 = QLabel(self.frame)
-        self.label_2.setObjectName(u"label_2")
-        self.label_2.setGeometry(QRect(10, 10, 91, 16))
-        self.spinSH = QSpinBox(self.frame)
-        self.spinSH.setObjectName(u"spinSH")
-        self.spinSH.setGeometry(QRect(60, 90, 42, 22))
-        self.spinSH.setMaximum(255)
-        self.spinSH.setValue(255)
-        self.spinVH = QSpinBox(self.frame)
-        self.spinVH.setObjectName(u"spinVH")
-        self.spinVH.setGeometry(QRect(110, 90, 42, 22))
-        self.spinVH.setMaximum(255)
-        self.spinVH.setValue(255)
-        self.label_4 = QLabel(self.frame)
-        self.label_4.setObjectName(u"label_4")
-        self.label_4.setGeometry(QRect(10, 300, 49, 16))
-        self.spinHL = QSpinBox(self.frame)
-        self.spinHL.setObjectName(u"spinHL")
-        self.spinHL.setGeometry(QRect(10, 30, 42, 22))
-        self.spinHL.setMaximum(255)
-        self.spinHL.setValue(35)
-        self.spinHH = QSpinBox(self.frame)
-        self.spinHH.setObjectName(u"spinHH")
-        self.spinHH.setGeometry(QRect(10, 90, 42, 22))
-        self.spinHH.setMaximum(255)
-        self.spinHH.setValue(190)
-        self.label_3 = QLabel(self.frame)
-        self.label_3.setObjectName(u"label_3")
-        self.label_3.setGeometry(QRect(10, 60, 91, 16))
 
-        self.horizontalLayout.addWidget(self.frame)
+        self.verticalLayout_2.addWidget(self.sliderOpacity)
 
-        self.horizontalLayout.setStretch(1, 1)
+        self.processButton = QPushButton(self.verticalLayoutWidget)
+        self.processButton.setObjectName(u"processButton")
+        self.processButton.setMinimumSize(QSize(0, 100))
+        self.processButton.setMaximumSize(QSize(400, 16777215))
+        self.processButton.setLayoutDirection(Qt.LeftToRight)
+
+        self.verticalLayout_2.addWidget(self.processButton)
+
+
+        self.horizontalLayout.addLayout(self.verticalLayout_2)
+
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
@@ -271,11 +414,10 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.progressBar)
 
-        self.verticalLayout.setStretch(2, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 924, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1158, 22))
         self.menuHelp = QMenu(self.menubar)
         self.menuHelp.setObjectName(u"menuHelp")
         MainWindow.setMenuBar(self.menubar)
@@ -289,6 +431,14 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
 
         QMetaObject.connectSlotsByName(MainWindow)
+
+        self.thread = QThread()
+        # self.worker = Process_mask()
+        # self.worker.moveToThread(self.thread)
+        # self.thread.started.connect(self.worker.run)
+        # self.worker.finished.connect(self.test)
+
+        
 
         # Variables initial values
         self.input_path = ''
@@ -311,14 +461,15 @@ class Ui_MainWindow(object):
         self.openInputFolder.setText(QCoreApplication.translate("MainWindow", u"Input folder", None))
         self.selectOutputFolder.setText(QCoreApplication.translate("MainWindow", u"Output folder", None))
         self.scrollLeftButton.setText(QCoreApplication.translate("MainWindow", u"<", None))
+        self.labelImage.setText(QCoreApplication.translate("MainWindow", u"", None))
         self.scrollRightButton.setText(QCoreApplication.translate("MainWindow", u">", None))
-        self.processButton.setText(QCoreApplication.translate("MainWindow", u"Process masks", None))
-        self.previewButton.setText(QCoreApplication.translate("MainWindow", u"Preview", None))
-        self.opacityValueText.setText(QCoreApplication.translate("MainWindow", u"50", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"Min size of object", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Lower HSV limit", None))
-        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Opacity", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Higher HSV limit", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Min size of object", None))
+        self.previewButton.setText(QCoreApplication.translate("MainWindow", u"Preview", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Opacity", None))
+        self.opacityValueText.setText(QCoreApplication.translate("MainWindow", u"50", None))
+        self.processButton.setText(QCoreApplication.translate("MainWindow", u"Process masks", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"Help", None))
     # retranslateUi
 
@@ -349,9 +500,13 @@ class Ui_MainWindow(object):
 
         # Scene definitions
         self.pixmap = QtWidgets.QGraphicsPixmapItem()
-        self.scene = QtWidgets.QGraphicsScene(self.centralwidget)
-        self.scene.addItem(self.pixmap)
-        self.graphicsView.setScene(self.scene)
+        # self.scene = QtWidgets.QGraphicsScene(self.centralwidget)
+        # self.scene.addItem(self.pixmap)
+        # self.graphicsView.setScene(self.scene)
+
+
+    def update_progressbar(self, value):
+        self.progressBar.setValue(int(value))
 
 
     def open_folder(self, mode):
@@ -365,6 +520,7 @@ class Ui_MainWindow(object):
                     os.chdir(self.input_path)
                     self.image_list = glob.glob('*.JPG')
                     self.preview = cv2.imread(self.image_list[0])
+                    self.hsv =  cv2.cvtColor(self.preview, cv2.COLOR_BGR2HSV)
 
                     # self.preview = cv2.resize(self.preview, (500, 500))
 
@@ -403,10 +559,12 @@ class Ui_MainWindow(object):
             image = cv2.addWeighted(self.preview, 0.5, self.preview_mask, self.opacity, 0.0)
 
 
-        image = cv2.resize(image, (500, 500))
+        image = cv2.resize(image, (400, 400))
         q_img = self.array_to_QPixmap(image)
         pixmap_image = QPixmap.fromImage(q_img)
-        self.pixmap.setPixmap(pixmap_image)
+        self.labelImage.setPixmap(pixmap_image)
+
+        # self.pixmap.setPixmap(pixmap_image)
 
 
     def set_opacity(self):
@@ -423,10 +581,22 @@ class Ui_MainWindow(object):
         self.object_size = self.spinObjectSize.value()
 
         # image = cv2.resize(self.preview, (int(self.preview.shape[1]/2), int(self.preview.shape[0]/2)))
+        # self.thread = QThread()
+        self.worker = Process_mask(self.hsv, self.object_size, self.low_hsv, self.high_hsv)
+        self.worker.moveToThread(self.thread)
 
-        self.preview_mask = segment_mask(self.preview, self.object_size, self.low_hsv, self.high_hsv)
+        # self.thread.started.connect(self.worker.run)
 
-        self.preview_mask = cv2.cvtColor(self.preview_mask, cv2.COLOR_GRAY2BGR)
+        # self.worker.finished.connect(self.update_canvas)
+        self.thread.start()
+
+        self.preview_mask = self.worker.run()
+
+
+
+        # self.preview_mask = segment_mask(self.hsv, self.object_size, self.low_hsv, self.high_hsv)
+
+        # self.preview_mask = cv2.cvtColor(self.preview_mask, cv2.COLOR_GRAY2BGR)
 
         # self.update_canvas(cv2.cvtColor(np.uint8(mask), cv2.COLOR_GRAY2BGR))
         self.update_canvas()
@@ -448,6 +618,7 @@ class Ui_MainWindow(object):
 
 
         self.preview = cv2.imread(self.image_list[self.image_position])
+        self.hsv =  cv2.cvtColor(self.preview, cv2.COLOR_BGR2HSV)
 
         self.update_canvas()
 
@@ -466,23 +637,33 @@ class Ui_MainWindow(object):
         image_list = glob.glob('*.JPG')
         
 
-        progress_bar_max = np.size(image_list)
-        progress_bar_count = 0
+        # progress_bar_max = np.size(image_list)
+        # progress_bar_count = 0
         self.progressBar.setValue(0)
         self.statusbar.showMessage("Processing")
 
-        processes = list()
-        for index in range(np.size(image_list)):
-            p = Process(target=parallel_function, args=(str(image_list[index]), str(self.input_path), 
-            str(self.output_path), int(self.object_size), Array('i', self.low_hsv), Array('i', self.high_hsv)))
-            processes.append(p)
-            p.start()
 
-        for p in processes:
-            p.join()
-            progress_bar_count += 1
-            self.progressBar.setValue(int((progress_bar_count/progress_bar_max)*100))
-            QtWidgets.QApplication.processEvents()
+        self.worker = Process_image_batch(image_list, self.object_size, self.low_hsv, self.high_hsv, self.input_path, self.output_path)
+        self.worker.moveToThread(self.thread)
+        # self.thread.started.connect(self.worker.run)
+
+        self.worker.progress.connect(self.update_progressbar)
+        self.thread.start()
+        self.worker.run()
+
+
+        # processes = list()
+        # for index in range(np.size(image_list)):
+        #     p = Process(target=parallel_core_function, args=(str(image_list[index]), str(self.input_path), 
+        #     str(self.output_path), int(self.object_size), Array('i', self.low_hsv), Array('i', self.high_hsv)))
+        #     processes.append(p)
+        #     p.start()
+
+        # for p in processes:
+        #     p.join()
+        #     progress_bar_count += 1
+        #     self.progressBar.setValue(int((progress_bar_count/progress_bar_max)*100))
+        #     QtWidgets.QApplication.processEvents()
 
 
         # for image_address in image_list:            
@@ -509,7 +690,7 @@ class Ui_MainWindow(object):
 
 class MainWindow(QtWidgets.QMainWindow):
     def resizeEvent(self, event):
-        print("Window has been resized")
+        # print("Window has been resized")
         QtWidgets.QMainWindow.resizeEvent(self, event)
 
 if __name__ == '__main__':
